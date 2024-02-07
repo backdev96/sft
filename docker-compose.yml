@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./
+    container_name: api
+    environment:
+      DB_USER: ${POSTGRES_USER:-np-api}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-np-api-password}
+      DB_NAME: ${POSTGRES_DB:-projects}
+      DB_HOST: ${DB_HOST:-database}
+      DB_PORT: ${DB_PORT:-5432}
+      MEDIA_ROOT: ${MEDIA_ROOT:-/var/www/media}
+    restart: always
+    command: bash -c "
+                python manage.py migrate &&
+                python manage.py runserver 0.0.0.0:8000"
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src/:/app/src/
+
+  database:
+    image: postgres:13.0-alpine
+    container_name: np-database-dev
+    expose:
+      - "5432"
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-np-api}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-np-api-password}
+      POSTGRES_DB: ${POSTGRES_DB:-projects}
+    command:
+      - "-c"
+      - "log_statement=all" # logs SQL queries
